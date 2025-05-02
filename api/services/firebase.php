@@ -10,39 +10,88 @@
                 http_response_code(406);
                 die("Parámetros de notificación incorrectos");
             }
-            $key_fcm = getenv('FCMKEY');
-            $api = new Api();
-            $msg = self::crearNotificacionMsg(
+            $notification = self::crearNotificacionMsg(
                 $notif_form->titulo,
                 $notif_form->cuerpo,
                 $notif_form->ids,
                 $notif_form->data
             );
-            $key_header = array("Authorization: key=$key_fcm");
-            $result = $api->call(
-                "https://fcm.googleapis.com/fcm/send",
-                $msg,
-                "POST",
-                $key_header
-            );
+            $fcm_token = self::crearTokenFCM();
+            $project_id = $fcm_token->projectId;
+            $access_token = $fcm_token->token;
+            $fcm_url = "https://fcm.googleapis.com/v1/projects/{$project_id}/messages:send";
+            $ch = curl_init($fcm_url);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                "Authorization: Bearer {$access_token}",
+                "Content-Type: application/json"
+            ]);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($notification));
+            $result = curl_exec($ch);
+            curl_close($ch);
             return json_encode($result);
+        }
+
+        static function crearTokenFCM() {
+            $credentials = json_decode(file_get_contents('../api/b38b1000-3f6f-49c6-a3c6-5905f292800f/service-account.json'), true);
+            $now = time();
+            $jwt_header = ['alg' => 'RS256', 'typ' => 'JWT'];
+            $jwt_claims = [
+                'iss' => $credentials['client_email'],
+                'scope' => 'https://www.googleapis.com/auth/firebase.messaging',
+                'aud' => 'https://oauth2.googleapis.com/token',
+                'iat' => $now,
+                'exp' => $now + 3600
+            ];
+            $jwt_header_encoded = self::base64UrlEncode(json_encode($jwt_header));
+            $jwt_claims_encoded = self::base64UrlEncode(json_encode($jwt_claims));
+            $jwt_unsigned = $jwt_header_encoded . '.' . $jwt_claims_encoded;
+            openssl_sign($jwt_unsigned, $signature, $credentials['private_key'], 'sha256');
+            $jwt_signed = $jwt_unsigned . '.' . self::base64UrlEncode($signature);
+            $ch = curl_init('https://oauth2.googleapis.com/token');
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+                'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+                'assertion' => $jwt_signed
+            ]));
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/x-www-form-urlencoded'
+            ]);
+            $response = curl_exec($ch);
+            curl_close($ch);
+            $token_data = json_decode($response, true);
+            $access_token = $token_data['access_token'];
+            if (!$access_token) {
+                return null;
+            }
+            $result = new stdClass();
+            $result->token = $access_token;
+            $result->projectId = $credentials['project_id'];
+            return $result;
         }
 
         static function crearNotificacionMsg($titulo, $cuerpo, $ids, $data) {
             $id_notificacion = bin2hex(openssl_random_pseudo_bytes(16));
-            $notificacion = new stdClass();
-            $notificacion->title = $titulo;
-            $notificacion->body = $cuerpo;
-            $android = new stdClass();
-            $android->priority = "high";
             $data['idnotificacion'] = $id_notificacion;
-            $msg = new stdClass();
-            $msg->registration_ids = $ids;
-            $msg->notification = $notificacion;
-            $msg->data = $data;
-            $msg->priority = "high";
-            $msg->android = $android;
-            return $msg;
+            $notification = new stdClass();
+            $notification->title = $titulo;
+            $notification->body = $cuerpo;
+            $android = new stdClass();
+            $android->priority = "HIGH";
+            $message = new stdClass();
+            $message->token = $ids[0];
+            $message->notification = $notification;
+            $message->data = $data;
+            $message->android = $android;
+            $fcm_message = new stdClass();
+            $fcm_message->message = $message;
+            return $fcm_message;
+        }
+
+        static function base64UrlEncode($data) {
+            return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
         }
     }
 ?>
