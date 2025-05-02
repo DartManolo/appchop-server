@@ -1,9 +1,11 @@
 <?php
     Class AppBackup {
-        public static function sincronizar($params) {
+        public static function solicitar($params) {
+            die(PHP_OS);
+            $ejecutar = false;
+            $backup_data = new stdClass();
             try {
                 Auth::verify();
-                Auth::crearArchivo(self::guid(), json_encode($params));
                 $backup_data = (object)$params;
                 if(!isset($backup_data->idUsuario) 
                     || !isset($backup_data->usuarioEnvia)
@@ -19,6 +21,56 @@
                     http_response_code(406);
                     die("Parámetros de backup incorrectos");
                 }
+                $nombre_archivo = self::guid();
+                Util::crearArchivo("../logserror/$nombre_archivo.txt", json_encode($params));
+                $ejecutar = true;
+                return json_encode(true);
+            } catch(Exception $e) {
+                return json_encode(false);
+            } finally {
+                if($ejecutar) {
+                    if (PHP_OS === 'Linux') {
+                        exec("php llamado_tardio.php > /dev/null 2>&1 &");
+                    } else if(PHP_OS === 'WINNT') {
+                        pclose(popen("start /B php llamado_tardio.php", "r"));
+                    }
+                }
+            }
+        }
+
+        static function crearBackup($backup_data) {
+            usleep(5000);
+            $fcmMessage = [
+                'ids' => array("cLR4cEFHSWKes6WKA3mTq5:APA91bE1wCIqbRGm61rYMj4-3YX7-xQkSRL-j8Ysu7rtF8xDfIrazD6-7JB2YHxQaV0-UPh3okV7qAbmZVCSP9rC-WJGHhoTyc5gQkdicU0eIYwLPIgH5og"),
+                'titulo' => 'Prueba',
+                'cuerpo' => 'Notificacion',
+                'data' => [
+                    'customKey1' => 'valor1'
+                ]
+            ];
+            Firebase::enviarNotificacion($fcmMessage);
+        }
+
+        public static function sincronizar($params) {
+            try {
+                Auth::verify();
+                $backup_data = (object)$params;
+                if(!isset($backup_data->idUsuario) 
+                    || !isset($backup_data->usuarioEnvia)
+                    || !isset($backup_data->cobranzas)
+                    || !isset($backup_data->cargosAbonos)
+                    || !isset($backup_data->notas)
+                    || !isset($backup_data->clientes)
+                    || !isset($backup_data->inventarios)
+                    || !isset($backup_data->borrados)
+                    || !isset($backup_data->usuarios)
+                    || !isset($backup_data->zonas)
+                    || !isset($backup_data->zonasUsuarios)) {
+                    http_response_code(406);
+                    die("Parámetros de backup incorrectos");
+                }
+                $nombre_archivo = self::guid();
+                Util::crearArchivo("../logserror/$nombre_archivo.txt", json_encode($params));
                 $encryption_key = getenv('ENCRYPTKEY');
                 $id_usuario = $backup_data->idUsuario;
                 $usuario = $backup_data->usuarioEnvia;
@@ -80,7 +132,7 @@
                 $app_backup->idBackup = $id_backup;
                 return json_encode($app_backup);
             } catch(Exception $e) {
-                Auth::crearArchivo(self::guid(), $ex->getMessage());
+                Util::crearArchivo(self::guid(), $ex->getMessage());
             }
         }
 

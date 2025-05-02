@@ -7,7 +7,13 @@
     header('P3P: CP="IDC DSP COR CURa ADMa OUR IND PHY ONL COM STA"');
 
     $services_list = array();
+    $omissions = array(
+        'services/backup.php'
+    );
     foreach(glob('services/*.php') as $service) {
+        if(in_array($service, $omissions)) {
+            continue;
+        }
         array_push(
             $services_list,
             strtolower(str_replace('.php', '', str_replace('services/', '', $service)))
@@ -65,9 +71,11 @@
     }
 
     $headers = apache_request_headers();
-    if(isset($headers['Authorization'])) {
+    if(isset($headers['Authorization']) || isset($headers['authorization'])) {
         session_start();
-        $_SESSION['Token'] = $headers['Authorization'];
+        $_SESSION['Token'] = isset($headers['Authorization']) 
+            ? $headers['Authorization'] 
+            : $headers['authorization'];
     }
 
     try {

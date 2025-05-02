@@ -10,6 +10,17 @@
                 http_response_code(406);
                 die("Parámetros de notificación incorrectos");
             }
+            $send = self::fcmSend($notif_form);
+            return json_encode($send);
+        }
+
+        public static function enviarNotificacionExternal($params) {
+            $notif_form = (object)$params;
+            $send = self::fcmSend($notif_form);
+            return json_encode($send);
+        }
+
+        static function fcmSend($notif_form) {
             $notification = self::crearNotificacionMsg(
                 $notif_form->titulo,
                 $notif_form->cuerpo,
@@ -30,11 +41,15 @@
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($notification));
             $result = curl_exec($ch);
             curl_close($ch);
-            return json_encode($result);
+            $fcm_result = json_decode($result);
+            return isset($fcm_result->name);
         }
 
         static function crearTokenFCM() {
-            $credentials = json_decode(file_get_contents('../api/b38b1000-3f6f-49c6-a3c6-5905f292800f/service-account.json'), true);
+            if(!$google_file = file_get_contents('../api/b38b1000-3f6f-49c6-a3c6-5905f292800f/service-account.json')) {
+                $google_file = file_get_contents('../../api/b38b1000-3f6f-49c6-a3c6-5905f292800f/service-account.json');
+            }
+            $credentials = json_decode($google_file, true);
             $now = time();
             $jwt_header = ['alg' => 'RS256', 'typ' => 'JWT'];
             $jwt_claims = [
@@ -73,7 +88,7 @@
         }
 
         static function crearNotificacionMsg($titulo, $cuerpo, $ids, $data) {
-            $id_notificacion = bin2hex(openssl_random_pseudo_bytes(16));
+            $id_notificacion = Util::guid();
             $data['idnotificacion'] = $id_notificacion;
             $notification = new stdClass();
             $notification->title = $titulo;

@@ -22,16 +22,5 @@
                 die('No autorizado (3)');
             }
         }
-
-        public static function crearArchivo($nombre, $contenido) {
-            try {
-                $nombre_archivo = "../logserror/$nombre.txt";
-                $archivo = fopen($nombre_archivo, "w");
-                if ($archivo) {
-                    fwrite($archivo, $contenido);
-                    fclose($archivo);
-                }
-            } finally { }
-        }
     }
 ?>
