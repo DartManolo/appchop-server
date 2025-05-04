@@ -47,7 +47,7 @@
 
         static function crearTokenFCM() {
             if(!$google_file = file_get_contents('../api/b38b1000-3f6f-49c6-a3c6-5905f292800f/service-account.json')) {
-                $google_file = file_get_contents('../../api/b38b1000-3f6f-49c6-a3c6-5905f292800f/service-account.json');
+                $google_file = file_get_contents(realpath(__DIR__ . '/../../api/b38b1000-3f6f-49c6-a3c6-5905f292800f/service-account.json'));
             }
             $credentials = json_decode($google_file, true);
             $now = time();

@@ -1,7 +1,7 @@
 <?php
     Class AppBackup {
         public static function solicitar($params) {
-            die(PHP_OS);
+            //die(PHP_OS);
             $ejecutar = false;
             $backup_data = new stdClass();
             try {
@@ -131,8 +131,9 @@
                 $app_backup = self::crearAppBackup($id_usuario, $usuario);
                 $app_backup->idBackup = $id_backup;
                 return json_encode($app_backup);
-            } catch(Exception $e) {
+            } catch(Exception $ex) {
                 Util::crearArchivo(self::guid(), $ex->getMessage());
+                die($ex->getMessage());
             }
         }
 
