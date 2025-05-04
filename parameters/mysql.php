@@ -45,5 +45,46 @@
                 return $resultado;
             }
         }
+
+        public function executeNonQueryv2($query, $params = []) {
+            //die(json_encode($params));
+            $stmt = $this->conn->prepare($query);
+            if (!$stmt) {
+                die("error");
+            }
+
+            // Si hay parámetros, los enlazamos
+            if (!empty($params)) {
+                // Tipos: todos string (s), podrías mejorarlo detectando int, float, etc.
+                $types = '';
+                $values = [];
+
+                foreach ($params as $param) {
+                    if (is_int($param)) {
+                        $types .= 'i';
+                    } elseif (is_float($param)) {
+                        $types .= 'd';
+                    } elseif (is_string($param)) {
+                        $types .= 's';
+                    } else {
+                        $types .= 'b';
+                    }
+                    $values[] = $param;
+                }
+                $stmt->bind_param($types, ...$values);
+            }
+    
+            if (!$stmt->execute()) {
+                return "Error al ejecutar: " . $stmt->error;
+            }
+    
+            do {
+                // Descartamos los resultados si hay múltiples
+                if ($result = $stmt->get_result()) {
+                    $result->free();
+                }
+            } while ($stmt->more_results() && $stmt->next_result());
+            return true;
+        }
     }
 ?>

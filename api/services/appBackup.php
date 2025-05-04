@@ -70,7 +70,7 @@
                     die("Parámetros de backup incorrectos");
                 }
                 $nombre_archivo = self::guid();
-                Util::crearArchivo("../logserror/$nombre_archivo.txt", json_encode($params));
+                Util::crearArchivo("../logserror/back-$nombre_archivo.txt", json_encode($params));
                 $encryption_key = getenv('ENCRYPTKEY');
                 $id_usuario = $backup_data->idUsuario;
                 $usuario = $backup_data->usuarioEnvia;
@@ -79,6 +79,13 @@
                 $mysql = new Mysql();
                 foreach($backup_data->cobranzas as $array_cobranza) {
                     $cobranza = (object)$array_cobranza;
+                    $cobranza->encryptionKey = $encryption_key;
+                    $cobranza->usuarioEnvia = $usuario_envia;
+                    $agregar_cobranza = $mysql->executeNonQueryv2(
+                        "CALL STP_APP_BACKUP_COBRANZAS_PROCESS(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        $cobranza
+                    );
+                    die($agregar_cobranza);
                     $agregar_cobranza = $mysql->executeNonQuery(
                         "CALL STP_APP_BACKUP_COBRANZAS_PROCESS(
                             '$cobranza->tabla', '$cobranza->idUsuario', '$cobranza->idCobranza', 
@@ -132,7 +139,8 @@
                 $app_backup->idBackup = $id_backup;
                 return json_encode($app_backup);
             } catch(Exception $ex) {
-                Util::crearArchivo(self::guid(), $ex->getMessage());
+                $error = self::guid();
+                Util::crearArchivo("../logserror/error-$error.txt", $ex->getMessage());
                 die($ex->getMessage());
             }
         }
