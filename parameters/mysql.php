@@ -47,18 +47,18 @@
         }
 
         public function executeNonQueryv2($query, $params = []) {
+            /*
+            truncate table app_cobranzas;
+            truncate table app_cargos_abonos;
+            */
             //die(json_encode($params));
             $stmt = $this->conn->prepare($query);
             if (!$stmt) {
-                die("error");
+                return $stmt->error;
             }
-
-            // Si hay parámetros, los enlazamos
             if (!empty($params)) {
-                // Tipos: todos string (s), podrías mejorarlo detectando int, float, etc.
                 $types = '';
                 $values = [];
-
                 foreach ($params as $param) {
                     if (is_int($param)) {
                         $types .= 'i';
@@ -73,13 +73,10 @@
                 }
                 $stmt->bind_param($types, ...$values);
             }
-    
             if (!$stmt->execute()) {
-                return "Error al ejecutar: " . $stmt->error;
+                return $stmt->error;
             }
-    
             do {
-                // Descartamos los resultados si hay múltiples
                 if ($result = $stmt->get_result()) {
                     $result->free();
                 }

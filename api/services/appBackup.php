@@ -85,7 +85,7 @@
                         "CALL STP_APP_BACKUP_COBRANZAS_PROCESS(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                         $cobranza
                     );
-                    die($agregar_cobranza);
+                    /*die($agregar_cobranza);
                     $agregar_cobranza = $mysql->executeNonQuery(
                         "CALL STP_APP_BACKUP_COBRANZAS_PROCESS(
                             '$cobranza->tabla', '$cobranza->idUsuario', '$cobranza->idCobranza', 
@@ -98,18 +98,22 @@
                             '$cobranza->usuarioUltimoAbono', '$cobranza->estatus', '$cobranza->bloqueado', 
                             '$cobranza->idCobrador', '$cobranza->estatusManual', '$encryption_key', '$usuario_envia'
                         )"
-                    );
+                    );*/
                 }
                 foreach($backup_data->cargosAbonos as $array_cargos_abonos) {
                     $cargo_abono = (object)$array_cargos_abonos;
-                    $agregar_cargos_abonos = $mysql->executeNonQuery(
+                    $agregar_cobranza = $mysql->executeNonQueryv2(
+                        "CALL STP_APP_BACKUP_CARGOSABONOS_INSERT(?,?,?,?,?,?,?,?,?,?)",
+                        $cargo_abono
+                    );
+                    /*$agregar_cargos_abonos = $mysql->executeNonQuery(
                         "CALL STP_APP_BACKUP_CARGOSABONOS_INSERT(
                             '$cargo_abono->tabla', '$cargo_abono->idUsuario', '$cargo_abono->idCobranza', 
                             '$cargo_abono->idMovimiento', '$cargo_abono->tipo', $cargo_abono->monto, 
                             '$cargo_abono->referencia', '$cargo_abono->usuarioRegistro', 
                             '$cargo_abono->fechaRegistro', '$cargo_abono->genera'
                         )"
-                    );
+                    );*/
                 }
                 foreach($backup_data->notas as $array_notas) {
                     $nota = (object)$array_notas;
@@ -449,4 +453,36 @@
             return $guid_cadena;   
         }
     }
+
+    /*
+$back_params = new stdClass();
+                    $back_params->tabla = $cobranza->tabla;
+                    $back_params->idUsuario = $cobranza->idUsuario;
+                    $back_params->idCobranza = $cobranza->idCobranza;
+                    $back_params->tipoCobranza = $cobranza->tipoCobranza;
+                    $back_params->zona = $cobranza->zona;
+                    $back_params->nombre = $cobranza->nombre;
+                    $back_params->cantidad = $cobranza->cantidad;
+                    $back_params->descripcion = $cobranza->descripcion;
+                    $back_params->telefono = $cobranza->telefono;
+                    $back_params->direccion = $cobranza->direccion;
+                    $back_params->correo = $cobranza->correo;
+                    $back_params->fechaRegistro = $cobranza->fechaRegistro;
+                    $back_params->fechaVencimiento = $cobranza->fechaVencimiento;
+                    $back_params->saldo = $cobranza->saldo;
+                    $back_params->latitud = $cobranza->latitud;
+                    $back_params->longitud = $cobranza->longitud;
+                    $back_params->ultimoCargo = $cobranza->ultimoCargo;
+                    $back_params->fechaUltimoCargo = $cobranza->fechaUltimoCargo;
+                    $back_params->usuarioUltimoCargo = $cobranza->usuarioUltimoCargo;
+                    $back_params->ultimoAbono = $cobranza->ultimoAbono;
+                    $back_params->fechaUltimoAbono = $cobranza->fechaUltimoAbono;
+                    $back_params->usuarioUltimoAbono = $cobranza->usuarioUltimoAbono;
+                    $back_params->estatus = $cobranza->estatus;
+                    $back_params->bloqueado = $cobranza->bloqueado;
+                    $back_params->idCobrador = $cobranza->idCobrador;
+                    $back_params->estatusManual = $cobranza->estatusManual;
+                    $back_params->encryptionKey = $encryption_key;
+                    $back_params->usuarioEnvia = $usuario_envia;
+*/
 ?>
